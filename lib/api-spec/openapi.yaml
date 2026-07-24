@@ -3,13 +3,19 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Mini Golf Scoring API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: games
+    description: Game operations
+  - name: players
+    description: Player operations
+  - name: scores
+    description: Score operations
 paths:
   /healthz:
     get:
@@ -24,6 +30,183 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /games:
+    get:
+      operationId: listGames
+      tags: [games]
+      summary: List all games
+      responses:
+        "200":
+          description: List of games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Game"
+    post:
+      operationId: createGame
+      tags: [games]
+      summary: Create a new game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameInput"
+      responses:
+        "201":
+          description: Created game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+
+  /games/{gameId}:
+    get:
+      operationId: getGame
+      tags: [games]
+      summary: Get a game with players and scores
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Game detail with players and scores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameDetail"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteGame
+      tags: [games]
+      summary: Delete a game
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /games/{gameId}/complete:
+    post:
+      operationId: completeGame
+      tags: [games]
+      summary: Mark a game as complete
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+
+  /games/{gameId}/players:
+    post:
+      operationId: addPlayer
+      tags: [players]
+      summary: Add a player to a game
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerInput"
+      responses:
+        "201":
+          description: Created player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /games/{gameId}/players/{playerId}:
+    delete:
+      operationId: removePlayer
+      tags: [players]
+      summary: Remove a player from a game
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /games/{gameId}/scores:
+    put:
+      operationId: upsertScore
+      tags: [scores]
+      summary: Set a score for a player on a hole
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScoreInput"
+      responses:
+        "200":
+          description: Upserted score
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Score"
+
+  /games/{gameId}/leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [games]
+      summary: Get leaderboard for a game
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Leaderboard sorted by total strokes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +217,110 @@ components:
       required:
         - status
 
+    Game:
+      type: object
+      required: [id, name, holes, createdAt, completedAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        holes:
+          type: integer
+        createdAt:
+          type: string
+        completedAt:
+          type: ["string", "null"]
+
+    GameInput:
+      type: object
+      required: [name, holes]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        holes:
+          type: integer
+          enum: [9, 18]
+
+    GameDetail:
+      type: object
+      required: [id, name, holes, createdAt, completedAt, players, scores]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        holes:
+          type: integer
+        createdAt:
+          type: string
+        completedAt:
+          type: ["string", "null"]
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/Player"
+        scores:
+          type: array
+          items:
+            $ref: "#/components/schemas/Score"
+
+    Player:
+      type: object
+      required: [id, gameId, name]
+      properties:
+        id:
+          type: integer
+        gameId:
+          type: integer
+        name:
+          type: string
+
+    PlayerInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+
+    Score:
+      type: object
+      required: [id, gameId, playerId, hole, strokes]
+      properties:
+        id:
+          type: integer
+        gameId:
+          type: integer
+        playerId:
+          type: integer
+        hole:
+          type: integer
+        strokes:
+          type: integer
+
+    ScoreInput:
+      type: object
+      required: [playerId, hole, strokes]
+      properties:
+        playerId:
+          type: integer
+        hole:
+          type: integer
+        strokes:
+          type: integer
+          minimum: 1
+
+    LeaderboardEntry:
+      type: object
+      required: [playerId, playerName, totalStrokes, holesCompleted]
+      properties:
+        playerId:
+          type: integer
+        playerName:
+          type: string
+        totalStrokes:
+          type: integer
+        holesCompleted:
+          type: integer

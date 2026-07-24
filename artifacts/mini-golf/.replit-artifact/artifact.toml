@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Mini Golf Scorer"
+version = "1.0.0"
+id = "artifacts/mini-golf"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18810
+
+[services.development]
+run = "pnpm --filter @workspace/mini-golf run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mini-golf", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/mini-golf/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18810"
+BASE_PATH = "/"
