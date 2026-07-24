@@ -16,8 +16,6 @@ tags:
     description: Player operations
   - name: scores
     description: Score operations
-  - name: auth
-    description: Auth operations
 paths:
   /healthz:
     get:
@@ -209,22 +207,6 @@ paths:
                 items:
                   $ref: "#/components/schemas/LeaderboardEntry"
 
-  /auth/change-password:
-    post:
-      operationId: changePassword
-      tags: [auth]
-      summary: Change the shared app password
-      description: Requires valid Basic Auth credentials for the current password, same as every other route.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ChangePasswordInput"
-      responses:
-        "204":
-          description: Password changed
-
 components:
   schemas:
     HealthStatus:
@@ -350,11 +332,3 @@ components:
           type: integer
         holesCompleted:
           type: integer
-
-    ChangePasswordInput:
-      type: object
-      required: [newPassword]
-      properties:
-        newPassword:
-          type: string
-          minLength: 4

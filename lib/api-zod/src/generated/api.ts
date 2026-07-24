@@ -182,18 +182,3 @@ export const GetLeaderboardResponseItem = zod.object({
 export const GetLeaderboardResponse = zod.array(GetLeaderboardResponseItem)
 
 
-/**
- * Requires valid Basic Auth credentials for the current password, same as every other route.
- * @summary Change the shared app password
- */
-export const changePasswordBodyNewPasswordMin = 4;
-
-
-
-export const ChangePasswordBody = zod.object({
-  "newPassword": zod.string().min(changePasswordBodyNewPasswordMin)
-})
-
-export const ChangePasswordResponse = zod.void()
-
-

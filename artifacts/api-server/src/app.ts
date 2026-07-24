@@ -4,11 +4,8 @@ import helmet from "helmet";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { requireBasicAuth } from "./middlewares/basic-auth";
 import { apiRateLimiter } from "./middlewares/rate-limit";
-import { getAppPassword } from "./lib/settings";
 
-const requireAuth = requireBasicAuth(getAppPassword);
 const corsOrigin = process.env["CORS_ORIGIN"];
 
 const app: Express = express();
@@ -37,19 +34,7 @@ app.use(cors({ origin: corsOrigin ? corsOrigin.split(",") : true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(
-  "/api",
-  apiRateLimiter,
-  (req, res, next) => {
-    // Health checks (systemd/monitoring) must stay reachable without credentials.
-    if (req.path === "/healthz") {
-      next();
-      return;
-    }
-    requireAuth(req, res, next);
-  },
-  router,
-);
+app.use("/api", apiRateLimiter, router);
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, next) => {
   if (res.headersSent) {

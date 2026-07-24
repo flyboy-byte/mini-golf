@@ -88,8 +88,3 @@ export interface LeaderboardEntry {
   holesCompleted: number;
 }
 
-export interface ChangePasswordInput {
-  /** @minLength 4 */
-  newPassword: string;
-}
-
