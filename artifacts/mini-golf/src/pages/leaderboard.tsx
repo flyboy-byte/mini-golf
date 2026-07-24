@@ -68,6 +68,7 @@ export default function Leaderboard({ params }: { params: { gameId: string } }) 
               </div>
               <div className="text-right">
                 <div className="text-4xl font-display font-black text-primary tracking-tighter">{entry.totalStrokes}</div>
+                <div className="text-xs text-muted-foreground font-medium">Par {expectedStrokes}</div>
                 <div className={`text-sm font-bold ${vsParClass}`}>{vsParText} vs par</div>
               </div>
             </div>

@@ -8,12 +8,14 @@ function ScoreStepper({
   gameId,
   playerId,
   hole,
+  par,
   currentScore,
   isComplete,
 }: {
   gameId: number;
   playerId: number;
   hole: number;
+  par: number;
   currentScore?: number;
   isComplete: boolean;
 }) {
@@ -31,11 +33,16 @@ function ScoreStepper({
 
   const displayed = draft ?? currentScore ?? 0;
 
+  // First tap (in either direction) starts the score at par, like uDisc —
+  // only once a score exists do +/- step by a single stroke from there.
+  const handleMinus = () => save(displayed === 0 ? par : Math.max(1, displayed - 1));
+  const handlePlus = () => save(displayed === 0 ? par : displayed + 1);
+
   return (
     <div className="flex items-center justify-center gap-1">
       <button
-        disabled={isComplete || displayed <= 0}
-        onClick={() => save(Math.max(0, displayed - 1))}
+        disabled={isComplete || displayed === 1}
+        onClick={handleMinus}
         className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center text-foreground disabled:opacity-40 active:scale-95 transition-transform"
       >
         <Minus className="w-4 h-4" />
@@ -67,7 +74,7 @@ function ScoreStepper({
       />
       <button
         disabled={isComplete}
-        onClick={() => save(displayed + 1)}
+        onClick={handlePlus}
         className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center text-foreground disabled:opacity-40 active:scale-95 transition-transform"
       >
         <Plus className="w-4 h-4" />
@@ -127,6 +134,7 @@ export default function Scorecard({ params }: { params: { gameId: string } }) {
                       gameId={game.id}
                       playerId={p.id}
                       hole={hole}
+                      par={par}
                       currentScore={score?.strokes}
                       isComplete={!!game.completedAt}
                     />
