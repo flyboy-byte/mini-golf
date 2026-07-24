@@ -25,7 +25,8 @@ A simple web app for tracking mini golf scores with friends. Create games, add p
 - OpenAPI spec: `lib/api-spec/openapi.yaml`
 - DB schema: `lib/db/src/schema/{games,players,scores}.ts`
 - API routes: `artifacts/api-server/src/routes/games.ts`
-- Frontend pages: `artifacts/mini-golf/src/pages/{home,new-game,game,leaderboard}.tsx`
+- Frontend pages: `artifacts/mini-golf/src/pages/{home,new-game,scorecard,leaderboard}.tsx`
+- Shared components: `artifacts/mini-golf/src/components/{layout,game-tabs}.tsx`
 - App entry: `artifacts/mini-golf/src/App.tsx`
 
 ## Architecture decisions
