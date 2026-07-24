@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { ensureAppPassword } from "./lib/settings";
 
 const rawPort = process.env["PORT"];
 
@@ -15,11 +16,23 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, (err) => {
+const initialAppPassword = process.env["APP_PASSWORD"];
+
+if (!initialAppPassword) {
+  throw new Error(
+    "APP_PASSWORD environment variable is required but was not provided.",
+  );
+}
+
+const host = process.env["HOST"] ?? "127.0.0.1";
+
+await ensureAppPassword(initialAppPassword);
+
+app.listen(port, host, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
     process.exit(1);
   }
 
-  logger.info({ port }, "Server listening");
+  logger.info({ port, host }, "Server listening");
 });

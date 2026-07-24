@@ -1,14 +1,17 @@
-import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
+import { sql } from "drizzle-orm";
 import { z } from "zod/v4";
 
-export const gamesTable = pgTable("games", {
-  id: serial("id").primaryKey(),
+export const gamesTable = sqliteTable("games", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   holes: integer("holes").notNull().default(9),
   par: integer("par").notNull().default(3),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
 });
 
 export const insertGameSchema = createInsertSchema(gamesTable).omit({ id: true, createdAt: true, completedAt: true });

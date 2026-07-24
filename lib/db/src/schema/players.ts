@@ -1,10 +1,10 @@
-import { pgTable, serial, text, integer } from "drizzle-orm/pg-core";
+import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { gamesTable } from "./games";
 
-export const playersTable = pgTable("players", {
-  id: serial("id").primaryKey(),
+export const playersTable = sqliteTable("players", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   gameId: integer("game_id").notNull().references(() => gamesTable.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
 });

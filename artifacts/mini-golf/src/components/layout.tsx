@@ -1,5 +1,6 @@
 import { Link } from 'wouter';
 import { Flag } from 'lucide-react';
+import ChangePasswordDialog from '@/components/change-password-dialog';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +18,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 max-w-md mx-auto w-full px-4 py-6">
         {children}
       </main>
+      <footer className="border-t border-border">
+        <div className="max-w-md mx-auto px-4 py-4 flex justify-center">
+          <ChangePasswordDialog />
+        </div>
+      </footer>
     </div>
   );
 }
