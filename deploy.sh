@@ -27,6 +27,10 @@ ssh "$VPS" bash <<'REMOTE'
 set -euo pipefail
 cd ~/mini-golf
 
+export DATABASE_URL="file:/home/ubuntu/mini-golf/data/mini_golf.db"
+export PORT=5761
+export BASE_PATH="/"
+
 echo "--- git pull ---"
 git pull
 
@@ -38,6 +42,11 @@ pnpm --filter @workspace/db run push
 
 echo "--- build ---"
 pnpm run build
+
+echo "--- publish static frontend (nginx can't read ~/mini-golf directly) ---"
+sudo cp -r artifacts/mini-golf/dist/public/. /var/www/golf.flyboybyte.com/
+sudo chown -R root:root /var/www/golf.flyboybyte.com
+sudo chmod -R a+rX /var/www/golf.flyboybyte.com
 
 echo "--- restart api service ---"
 systemctl --user restart mini-golf-api.service
