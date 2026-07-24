@@ -10,6 +10,7 @@ export interface Game {
   id: number;
   name: string;
   holes: number;
+  par: number;
   createdAt: string;
   /** @nullable */
   completedAt: string | null;

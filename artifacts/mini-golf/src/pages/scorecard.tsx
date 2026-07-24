@@ -1,151 +1,148 @@
-import { useState, useRef, useEffect } from 'react';
-import { useGetGame, useUpsertScore, getGetGameQueryKey, type GameDetail } from '@workspace/api-client-react';
+import { useState } from 'react';
+import { useGetGame, useUpsertScore, getGetGameQueryKey, getGetLeaderboardQueryKey } from '@workspace/api-client-react';
 import { GameTabs } from '@/components/game-tabs';
 import { useQueryClient } from '@tanstack/react-query';
-import { cn } from '@/lib/utils';
+import { Minus, Plus, CheckCircle2 } from 'lucide-react';
 
-function ScoreCell({ gameId, playerId, hole, currentScore, isComplete }: { gameId: number, playerId: number, hole: number, currentScore?: number, isComplete: boolean }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [val, setVal] = useState(currentScore?.toString() || '');
+function ScoreStepper({
+  gameId,
+  playerId,
+  hole,
+  currentScore,
+  isComplete,
+}: {
+  gameId: number;
+  playerId: number;
+  hole: number;
+  currentScore?: number;
+  isComplete: boolean;
+}) {
   const upsertScore = useUpsertScore();
   const queryClient = useQueryClient();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [draft, setDraft] = useState<number | undefined>(currentScore);
 
-  useEffect(() => {
-    if (isEditing) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    }
-  }, [isEditing]);
-
-  const handleSave = () => {
-     setIsEditing(false);
-     if (!val.trim()) {
-        setVal(currentScore?.toString() || '');
-        return;
-     }
-     const num = parseInt(val, 10);
-     if (!isNaN(num) && num > 0) {
-        if (num !== currentScore) {
-            upsertScore.mutate({ gameId, data: { playerId, hole, strokes: num } }, {
-               onSuccess: (newScore) => {
-                  queryClient.setQueryData<GameDetail>(getGetGameQueryKey(gameId), (old) => {
-                     if (!old) return old;
-                     const scores = old.scores.filter(s => !(s.playerId === newScore.playerId && s.hole === newScore.hole));
-                     return { ...old, scores: [...scores, newScore] };
-                  });
-               }
-            });
-        }
-     } else {
-        setVal(currentScore?.toString() || '');
-     }
+  const save = async (next: number) => {
+    if (next < 1) return;
+    setDraft(next);
+    await upsertScore.mutateAsync({ gameId, data: { playerId, hole, strokes: next } });
+    queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(gameId) });
+    queryClient.invalidateQueries({ queryKey: getGetLeaderboardQueryKey(gameId) });
   };
 
-  if (isEditing) {
-     return (
-       <input
-         ref={inputRef}
-         type="number"
-         min="1"
-         max="99"
-         className="w-full h-full absolute inset-0 text-center bg-card focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset rounded-none font-black text-xl text-primary z-20 m-0 p-0"
-         value={val}
-         onChange={e => setVal(e.target.value)}
-         onBlur={handleSave}
-         onKeyDown={e => {
-            if (e.key === 'Enter') handleSave();
-            if (e.key === 'Escape') {
-               setVal(currentScore?.toString() || '');
-               setIsEditing(false);
-            }
-         }}
-       />
-     )
-  }
+  const displayed = draft ?? currentScore ?? 0;
 
   return (
-     <button
-       disabled={isComplete}
-       className="w-full h-full min-h-[56px] flex items-center justify-center text-lg font-bold hover:bg-primary/5 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset disabled:opacity-80 disabled:hover:bg-transparent"
-       onClick={() => setIsEditing(true)}
-     >
-       {currentScore ? (
-         <span className="text-foreground font-display text-xl">{currentScore}</span>
-       ) : (
-         <span className="text-muted-foreground/30 font-medium">-</span>
-       )}
-     </button>
+    <div className="flex items-center justify-center gap-1">
+      <button
+        disabled={isComplete || displayed <= 0}
+        onClick={() => save(Math.max(0, displayed - 1))}
+        className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center text-foreground disabled:opacity-40 active:scale-95 transition-transform"
+      >
+        <Minus className="w-4 h-4" />
+      </button>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={99}
+        disabled={isComplete}
+        value={displayed || ''}
+        onChange={(e) => {
+          const val = e.target.value === '' ? undefined : parseInt(e.target.value, 10);
+          if (val === undefined || (!isNaN(val) && val >= 0 && val <= 99)) {
+            setDraft(val);
+          }
+        }}
+        onBlur={() => {
+          if (draft !== undefined && draft !== currentScore && draft >= 1) {
+            save(draft);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        className="w-12 h-10 text-center font-display font-bold text-xl bg-card border-2 border-border rounded-lg focus:border-primary focus:outline-none disabled:opacity-60"
+      />
+      <button
+        disabled={isComplete}
+        onClick={() => save(displayed + 1)}
+        className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center text-foreground disabled:opacity-40 active:scale-95 transition-transform"
+      >
+        <Plus className="w-4 h-4" />
+      </button>
+    </div>
   );
 }
 
 export default function Scorecard({ params }: { params: { gameId: string } }) {
-   const gameId = parseInt(params.gameId, 10);
-   const { data: game, isLoading } = useGetGame(gameId, { query: { enabled: !!gameId, queryKey: getGetGameQueryKey(gameId) } });
+  const gameId = parseInt(params.gameId, 10);
+  const { data: game, isLoading } = useGetGame(gameId, {
+    query: { enabled: !!gameId, queryKey: getGetGameQueryKey(gameId), refetchInterval: 10000 },
+  });
 
-   if (isLoading || !game) return <div className="p-8 text-center text-muted-foreground font-medium">Loading scorecard...</div>;
+  if (isLoading || !game) return <div className="p-8 text-center text-muted-foreground font-medium">Loading scorecard...</div>;
 
-   const holes = Array.from({ length: game.holes }, (_, i) => i + 1);
+  const holes = Array.from({ length: game.holes }, (_, i) => i + 1);
+  const par = game.par ?? 3;
 
-   return (
-     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 pb-24">
-        <GameTabs gameId={gameId} />
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 pb-24">
+      <GameTabs gameId={gameId} />
 
-        <div className="mb-4">
-           <h1 className="text-2xl font-display font-black tracking-tight">{game.name}</h1>
-           <p className="text-sm text-muted-foreground font-medium">Scorecard • {game.holes} Holes</p>
+      <div className="mb-4 flex items-end justify-between">
+        <div>
+          <h1 className="text-2xl font-display font-black tracking-tight">{game.name}</h1>
+          <p className="text-sm text-muted-foreground font-medium">
+            Scorecard • {game.holes} Holes • Par {par}
+          </p>
         </div>
-
-        <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm w-full">
-           <table className="w-full text-sm text-left border-collapse">
-             <thead className="bg-muted/50 text-muted-foreground font-display">
-               <tr>
-                 <th className="p-3 border-b border-r border-border sticky left-0 bg-muted/80 backdrop-blur-md z-10 font-bold w-16 text-center shadow-[1px_0_0_0_hsl(var(--border))]">
-                   Hole
-                 </th>
-                 {game.players.map(p => (
-                    <th key={p.id} className="p-3 border-b border-r border-border text-center font-bold min-w-[90px] whitespace-nowrap">
-                      {p.name}
-                    </th>
-                 ))}
-               </tr>
-             </thead>
-             <tbody>
-               {holes.map(hole => (
-                 <tr key={hole} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                   <td className="p-3 border-r border-border sticky left-0 bg-card font-display font-bold text-center z-10 text-muted-foreground shadow-[1px_0_0_0_hsl(var(--border))]">
-                      {hole}
-                   </td>
-                   {game.players.map(p => {
-                      const score = game.scores.find(s => s.playerId === p.id && s.hole === hole);
-                      return (
-                        <td key={p.id} className="border-r border-border p-0 relative min-w-[90px]">
-                           <ScoreCell gameId={game.id} playerId={p.id} hole={hole} currentScore={score?.strokes} isComplete={!!game.completedAt} />
-                        </td>
-                      )
-                   })}
-                 </tr>
-               ))}
-             </tbody>
-             <tfoot className="bg-primary/5 font-display font-black">
-                <tr>
-                   <td className="p-3 border-r border-border sticky left-0 bg-primary/10 backdrop-blur-md z-10 text-center shadow-[1px_0_0_0_hsl(var(--border))] text-muted-foreground">
-                     TOT
-                   </td>
-                   {game.players.map(p => {
-                      const total = game.scores.filter(s => s.playerId === p.id).reduce((sum, s) => sum + s.strokes, 0);
-                      return <td key={p.id} className="p-3 border-r border-border text-center text-primary text-xl">{total}</td>
-                   })}
-                </tr>
-             </tfoot>
-           </table>
-        </div>
-
         {game.completedAt && (
-           <div className="mt-8 p-4 bg-muted/50 border border-border rounded-xl text-center text-sm font-medium text-muted-foreground">
-              This game is completed. Scores cannot be edited.
-           </div>
+          <div className="flex items-center gap-1.5 text-sm font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">
+            <CheckCircle2 className="w-4 h-4" />
+            Complete
+          </div>
         )}
-     </div>
-   )
+      </div>
+
+      <div className="space-y-3">
+        {holes.map((hole) => (
+          <div key={hole} className="bg-card border border-border rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-primary/10 text-primary font-display font-bold flex items-center justify-center">
+                  {hole}
+                </span>
+                <span className="text-sm font-medium text-muted-foreground">Par {par}</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {game.players.map((p) => {
+                const score = game.scores.find((s) => s.playerId === p.id && s.hole === hole);
+                return (
+                  <div key={p.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+                    <span className="font-bold text-foreground truncate pr-2">{p.name}</span>
+                    <ScoreStepper
+                      gameId={game.id}
+                      playerId={p.id}
+                      hole={hole}
+                      currentScore={score?.strokes}
+                      isComplete={!!game.completedAt}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {game.completedAt && (
+        <div className="mt-6 p-4 bg-muted/50 border border-border rounded-xl text-center text-sm font-medium text-muted-foreground">
+          This game is completed. Scores cannot be edited.
+        </div>
+      )}
+    </div>
+  );
 }

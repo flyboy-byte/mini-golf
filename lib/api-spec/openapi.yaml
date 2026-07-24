@@ -219,13 +219,15 @@ components:
 
     Game:
       type: object
-      required: [id, name, holes, createdAt, completedAt]
+      required: [id, name, holes, par, createdAt, completedAt]
       properties:
         id:
           type: integer
         name:
           type: string
         holes:
+          type: integer
+        par:
           type: integer
         createdAt:
           type: string
@@ -234,7 +236,7 @@ components:
 
     GameInput:
       type: object
-      required: [name, holes]
+      required: [name, holes, par]
       properties:
         name:
           type: string
@@ -242,16 +244,22 @@ components:
         holes:
           type: integer
           enum: [9, 18]
+        par:
+          type: integer
+          default: 3
+          enum: [2, 3, 4]
 
     GameDetail:
       type: object
-      required: [id, name, holes, createdAt, completedAt, players, scores]
+      required: [id, name, holes, par, createdAt, completedAt, players, scores]
       properties:
         id:
           type: integer
         name:
           type: string
         holes:
+          type: integer
+        par:
           type: integer
         createdAt:
           type: string

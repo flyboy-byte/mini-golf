@@ -24,6 +24,7 @@ export const ListGamesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "holes": zod.number(),
+  "par": zod.number(),
   "createdAt": zod.string(),
   "completedAt": zod.string().nullable()
 })
@@ -34,17 +35,19 @@ export const ListGamesResponse = zod.array(ListGamesResponseItem)
  * @summary Create a new game
  */
 
-
+export const createGameBodyParDefault = 3;
 
 export const CreateGameBody = zod.object({
   "name": zod.string().min(1),
-  "holes": zod.union([zod.literal(9),zod.literal(18)])
+  "holes": zod.union([zod.literal(9),zod.literal(18)]),
+  "par": zod.union([zod.literal(2),zod.literal(3),zod.literal(4)]).default(createGameBodyParDefault)
 })
 
 export const CreateGameResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "holes": zod.number(),
+  "par": zod.number(),
   "createdAt": zod.string(),
   "completedAt": zod.string().nullable()
 })
@@ -61,6 +64,7 @@ export const GetGameResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "holes": zod.number(),
+  "par": zod.number(),
   "createdAt": zod.string(),
   "completedAt": zod.string().nullable(),
   "players": zod.array(zod.object({
@@ -99,6 +103,7 @@ export const CompleteGameResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "holes": zod.number(),
+  "par": zod.number(),
   "createdAt": zod.string(),
   "completedAt": zod.string().nullable()
 })

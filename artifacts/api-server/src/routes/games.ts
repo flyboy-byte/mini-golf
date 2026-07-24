@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db, gamesTable, playersTable, scoresTable } from "@workspace/db";
 import {
   CreateGameBody,
@@ -14,20 +14,21 @@ import {
   GetLeaderboardParams,
 } from "@workspace/api-zod";
 
+const gameResponse = (game: typeof gamesTable.$inferSelect) => ({
+  id: game.id,
+  name: game.name,
+  holes: game.holes,
+  par: game.par,
+  createdAt: game.createdAt.toISOString(),
+  completedAt: game.completedAt ? game.completedAt.toISOString() : null,
+});
+
 const router: IRouter = Router();
 
 // List all games
 router.get("/games", async (_req, res): Promise<void> => {
   const games = await db.select().from(gamesTable).orderBy(gamesTable.createdAt);
-  res.json(
-    games.map((g) => ({
-      id: g.id,
-      name: g.name,
-      holes: g.holes,
-      createdAt: g.createdAt.toISOString(),
-      completedAt: g.completedAt ? g.completedAt.toISOString() : null,
-    }))
-  );
+  res.json(games.map(gameResponse));
 });
 
 // Create a game
@@ -38,13 +39,7 @@ router.post("/games", async (req, res): Promise<void> => {
     return;
   }
   const [game] = await db.insert(gamesTable).values(parsed.data).returning();
-  res.status(201).json({
-    id: game.id,
-    name: game.name,
-    holes: game.holes,
-    createdAt: game.createdAt.toISOString(),
-    completedAt: game.completedAt ? game.completedAt.toISOString() : null,
-  });
+  res.status(201).json(gameResponse(game));
 });
 
 // Get a game with players and scores
@@ -65,11 +60,7 @@ router.get("/games/:gameId", async (req, res): Promise<void> => {
   const scores = await db.select().from(scoresTable).where(eq(scoresTable.gameId, game.id));
 
   res.json({
-    id: game.id,
-    name: game.name,
-    holes: game.holes,
-    createdAt: game.createdAt.toISOString(),
-    completedAt: game.completedAt ? game.completedAt.toISOString() : null,
+    ...gameResponse(game),
     players: players.map((p) => ({ id: p.id, gameId: p.gameId, name: p.name })),
     scores: scores.map((s) => ({ id: s.id, gameId: s.gameId, playerId: s.playerId, hole: s.hole, strokes: s.strokes })),
   });
@@ -102,13 +93,7 @@ router.post("/games/:gameId/complete", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Game not found" });
     return;
   }
-  res.json({
-    id: game.id,
-    name: game.name,
-    holes: game.holes,
-    createdAt: game.createdAt.toISOString(),
-    completedAt: game.completedAt ? game.completedAt.toISOString() : null,
-  });
+  res.json(gameResponse(game));
 });
 
 // Add a player
@@ -174,17 +159,22 @@ router.get("/games/:gameId/leaderboard", async (req, res): Promise<void> => {
     return;
   }
 
+  const [game] = await db.select().from(gamesTable).where(eq(gamesTable.id, params.data.gameId));
   const players = await db.select().from(playersTable).where(eq(playersTable.gameId, params.data.gameId));
   const scores = await db.select().from(scoresTable).where(eq(scoresTable.gameId, params.data.gameId));
+
+  const par = game?.par ?? 3;
 
   const leaderboard = players.map((p) => {
     const playerScores = scores.filter((s) => s.playerId === p.id);
     const totalStrokes = playerScores.reduce((sum, s) => sum + s.strokes, 0);
+    const holesCompleted = playerScores.length;
     return {
       playerId: p.id,
       playerName: p.name,
       totalStrokes,
-      holesCompleted: playerScores.length,
+      holesCompleted,
+      vsPar: totalStrokes - holesCompleted * par,
     };
   });
 

@@ -13,6 +13,7 @@ export interface Game {
   id: number;
   name: string;
   holes: number;
+  par: number;
   createdAt: string;
   /** @nullable */
   completedAt: string | null;
@@ -26,10 +27,20 @@ export const GameInputHoles = {
   NUMBER_18: 18,
 } as const;
 
+export type GameInputPar = typeof GameInputPar[keyof typeof GameInputPar];
+
+
+export const GameInputPar = {
+  NUMBER_2: 2,
+  NUMBER_3: 3,
+  NUMBER_4: 4,
+} as const;
+
 export interface GameInput {
   /** @minLength 1 */
   name: string;
   holes: GameInputHoles;
+  par: GameInputPar;
 }
 
 export interface Player {
@@ -50,6 +61,7 @@ export interface GameDetail {
   id: number;
   name: string;
   holes: number;
+  par: number;
   createdAt: string;
   /** @nullable */
   completedAt: string | null;

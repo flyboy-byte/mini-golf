@@ -6,9 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { GameInputHoles } from './gameInputHoles';
+import type { GameInputPar } from './gameInputPar';
 
 export interface GameInput {
   /** @minLength 1 */
   name: string;
   holes: GameInputHoles;
+  par: GameInputPar;
 }

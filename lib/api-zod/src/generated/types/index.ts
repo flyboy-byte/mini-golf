@@ -10,6 +10,7 @@ export * from './game';
 export * from './gameDetail';
 export * from './gameInput';
 export * from './gameInputHoles';
+export * from './gameInputPar';
 export * from './healthStatus';
 export * from './leaderboardEntry';
 export * from './player';

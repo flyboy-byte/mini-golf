@@ -6,6 +6,7 @@ export const gamesTable = pgTable("games", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   holes: integer("holes").notNull().default(9),
+  par: integer("par").notNull().default(3),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
 });
