@@ -41,8 +41,6 @@ This is a pnpm workspace (`pnpm-workspace.yaml`) split into `lib/*` (shared, non
 
 **Frontend** (`artifacts/mini-golf`): React + Vite + wouter (routes in `src/App.tsx`: `/`, `/games/new`, `/games/:gameId`, `/games/:gameId/leaderboard`), Tailwind CSS v4, shadcn/ui components (`src/components/ui/*` — generated, not hand-rolled; regenerate/extend via shadcn conventions rather than editing generated primitives ad hoc), TanStack Query for server state via the generated hooks in `@workspace/api-client-react`.
 
-**`artifacts/mockup-sandbox`**: a separate Vite app for previewing/designing UI components in isolation (has its own `mockupPreviewPlugin.ts`), independent of the main frontend and API server.
-
 Each artifact under `artifacts/*` has a `.replit-artifact/artifact.toml` describing how that service is run/built/served in the hosting environment (dev command, port, production build/serve, health check path). These are load-bearing service-routing configs, not just metadata — update them if you change how a service starts, its port, or its build output path.
 
 ## Conventions
